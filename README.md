@@ -158,7 +158,7 @@ CodeAlpha-HandwrittenCharacterRecognition/
 ### 1 · Clone the Repository
 
 ```bash
-git clone https://github.com/Mohit-1307/CodeAlpha-HandwrittenCharacterRecognition
+git clone https://github.com/Mohit-1307/CodeAlpha-HandwrittenCharacterRecognition.git
 cd CodeAlpha-HandwrittenCharacterRecognition
 ```
 
@@ -256,7 +256,7 @@ The CNN achieves near-human performance on MNIST due to the dataset's relatively
 
 ## Author
 
-**Mohit Singh Rajput** — AI / ML Engineer
+**MOHIT SINGH RAJPUT** — AI / ML Engineer
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/mohitsingh1307)
 [![GitHub](https://img.shields.io/badge/GitHub-121011?style=flat-square&logo=github&logoColor=white)](https://github.com/Mohit-1307)
