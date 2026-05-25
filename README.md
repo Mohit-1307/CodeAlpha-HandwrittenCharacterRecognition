@@ -1,88 +1,151 @@
 <div align="center">
 
-# ✍️ Handwritten Character Recognition using CNN
+# Handwritten Character Recognition — CNN
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python"/>
-  <img src="https://img.shields.io/badge/TensorFlow-DeepLearning-orange?style=for-the-badge&logo=tensorflow"/>
-  <img src="https://img.shields.io/badge/OpenCV-ComputerVision-green?style=for-the-badge&logo=opencv"/>
-  <img src="https://img.shields.io/badge/Streamlit-WebApp-red?style=for-the-badge&logo=streamlit"/>
-</p>
+[![Python](https://img.shields.io/badge/Python-3.12-3670A0?style=flat-square&logo=python&logoColor=ffdd54)](https://python.org)
+[![TensorFlow](https://img.shields.io/badge/TensorFlow-FF6F00?style=flat-square&logo=tensorflow&logoColor=white)](https://tensorflow.org)
+[![Keras](https://img.shields.io/badge/Keras-D00000?style=flat-square&logo=keras&logoColor=white)](https://keras.io)
+[![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat-square&logo=opencv&logoColor=white)](https://opencv.org)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat-square&logo=streamlit&logoColor=white)](https://streamlit.io)
+[![Status](https://img.shields.io/badge/Status-Completed-2ea44f?style=flat-square)]()
 
-<p align="center">
-  Deep Learning based handwritten digit recognition system using Convolutional Neural Networks (CNNs).
-</p>
+**CNN-based handwritten digit recognition trained on MNIST with a real-time Streamlit inference interface.**
 
----
+[Overview](#-overview) · [Architecture](#-cnn-architecture) · [Preprocessing](#-image-preprocessing-pipeline) · [Math](#-key-math) · [Setup](#-installation) · [Results](#-results)
 
 </div>
 
-# 📌 Project Overview
+---
 
-This project implements a **Handwritten Character Recognition System** using:
+## Overview
 
-- 🧠 Convolutional Neural Networks (CNN)
-- 👁️ Computer Vision with OpenCV
-- 📊 Deep Learning using TensorFlow/Keras
-- 🌐 Streamlit Web Application
+This project implements an end-to-end deep learning system for recognizing handwritten digits (0–9) from uploaded images.
 
-The model is trained on the **MNIST handwritten digit dataset** and can predict handwritten digits from uploaded images.
+The pipeline covers CNN model design, image preprocessing with OpenCV (grayscale conversion, Gaussian blur, adaptive thresholding, contour detection), model training on MNIST, and deployment as an interactive Streamlit web application.
+
+| Capability | Details |
+|---|---|
+| Model | Custom CNN trained on MNIST |
+| Input | Uploaded handwritten digit image |
+| Preprocessing | Grayscale → Blur → Threshold → Contour → Crop → 28×28 → Normalize |
+| Output | Predicted digit (0–9) + confidence score |
+| Deployment | Streamlit web app (`localhost:8501`) |
+| Test Accuracy | ~99% |
 
 ---
 
-# 🚀 Features
+## CNN Architecture
 
-✅ CNN-based digit recognition  
-✅ Image preprocessing pipeline  
-✅ Noise reduction using Gaussian Blur  
-✅ Adaptive thresholding  
-✅ Contour detection and cropping  
-✅ Real-time digit prediction  
-✅ Confidence score display  
-✅ Streamlit interactive UI  
-✅ High accuracy (~99%)  
-
----
-
-# 🧠 Deep Learning Architecture
-
-```text
-Input Image (28x28)
-        ↓
-Convolution Layer
-        ↓
-ReLU Activation
-        ↓
-Max Pooling
-        ↓
-Convolution Layer
-        ↓
-ReLU Activation
-        ↓
-Max Pooling
-        ↓
+```
+Input Image (28×28×1)
+        │
+        ▼
+Conv2D → ReLU            ← Feature map extraction (edges, curves)
+        │
+        ▼
+MaxPooling2D             ← Spatial downsampling, reduce computation
+        │
+        ▼
+Conv2D → ReLU            ← Higher-level feature extraction
+        │
+        ▼
+MaxPooling2D
+        │
+        ▼
 Flatten
-        ↓
-Dense Layer
-        ↓
-Softmax Output
+        │
+        ▼
+Dense (128) → ReLU       ← Fully connected classification head
+        │
+        ▼
+Dense (10) → Softmax     ← Class probability distribution (digits 0–9)
 ```
 
 ---
 
-# 📂 Project Structure
+## Image Preprocessing Pipeline
 
-```bash
-Handwritten Character Recognition/
+Raw images from users are rarely clean 28×28 grayscale inputs. The preprocessing pipeline normalizes them before inference:
+
+```
+Input Image (any size, any channel)
+        │
+        ▼
+Grayscale Conversion
+        │
+        ▼
+Gaussian Blur             ← Noise reduction
+        │
+        ▼
+Adaptive Thresholding     ← Binarization robust to lighting variation
+        │
+        ▼
+Morphological Dilation    ← Fill gaps in digit strokes
+        │
+        ▼
+Contour Detection         ← Isolate individual digit regions
+        │
+        ▼
+Digit Cropping
+        │
+        ▼
+Resize to 28×28           ← Match MNIST input dimensions
+        │
+        ▼
+Normalization (÷255)      ← Scale pixel values to [0, 1]
+        │
+        ▼
+CNN Inference
+```
+
+---
+
+## Key Math
+
+**Convolution** — extracts spatial features by sliding a learned kernel over the input:
+
+$$( I * K)(x,y) = \sum_m \sum_n I(m,n) \cdot K(x-m,\ y-n)$$
+
+**ReLU** — introduces non-linearity, kills negative activations:
+
+$$\text{ReLU}(x) = \max(0,\ x)$$
+
+**Softmax** — converts raw logits to a probability distribution over 10 classes:
+
+$$P(y_i) = \frac{e^{z_i}}{\sum_j e^{z_j}}$$
+
+**Cross-Entropy Loss** — penalizes confident wrong predictions most heavily:
+
+$$\mathcal{L} = -\sum_i y_i \log(\hat{y}_i)$$
+
+---
+
+## Dataset
+
+**[MNIST Handwritten Digit Dataset](http://yann.lecun.com/exdb/mnist/)** — Yann LeCun et al.
+
+| Property | Value |
+|---|---|
+| Training images | 60,000 |
+| Test images | 10,000 |
+| Image size | 28×28 grayscale |
+| Classes | 10 (digits 0–9) |
+| Source | `tensorflow.keras.datasets.mnist` |
+
+---
+
+## Project Structure
+
+```
+CodeAlpha-HandwrittenCharacterRecognition/
 │
-├── dataset/
-├── venv/
+├── dataset/                   # MNIST data (auto-downloaded)
 │
-├── train.py
-├── predict.py
-├── app.py
-├── model.keras
-├── digit.png
+├── train.py                   # Model training + evaluation
+├── predict.py                 # CLI inference on single image
+├── app.py                     # Streamlit web app
+├── model.keras                # Saved trained model
+├── digit.png                  # Sample test image
 │
 ├── requirements.txt
 └── README.md
@@ -90,71 +153,28 @@ Handwritten Character Recognition/
 
 ---
 
-# 🛠️ Tech Stack
+## Installation
 
-| Technology | Usage |
-|---|---|
-| Python | Core Programming |
-| TensorFlow / Keras | Deep Learning |
-| OpenCV | Image Processing |
-| NumPy | Numerical Computing |
-| Matplotlib | Visualization |
-| Streamlit | Web Application |
-
----
-
-# 📊 Dataset
-
-## MNIST Dataset
-
-The project uses the famous **MNIST handwritten digit dataset**.
-
-### Dataset Details
-
-| Property | Value |
-|---|---|
-| Training Images | 60,000 |
-| Testing Images | 10,000 |
-| Image Size | 28×28 |
-| Classes | 10 Digits (0–9) |
-
----
-
-# ⚙️ Installation
-
-## 1️⃣ Clone Repository
+### 1 · Clone the Repository
 
 ```bash
 git clone https://github.com/Mohit-1307/CodeAlpha-HandwrittenCharacterRecognition
-```
-
----
-
-## 2️⃣ Navigate to Project Folder
-
-```bash
 cd CodeAlpha-HandwrittenCharacterRecognition
 ```
 
----
-
-## 3️⃣ Create Virtual Environment
-
-### Windows
+### 2 · Create & Activate Virtual Environment
 
 ```bash
+# Windows
 python -m venv venv
-```
-
-Activate environment:
-
-```bash
 venv\Scripts\activate
+
+# Linux / macOS
+python3 -m venv venv
+source venv/bin/activate
 ```
 
----
-
-## 4️⃣ Install Dependencies
+### 3 · Install Dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -162,83 +182,43 @@ pip install -r requirements.txt
 
 ---
 
-# ▶️ Run Training
+## Usage
+
+### Train the Model
 
 ```bash
 python train.py
 ```
 
-### Output
+Trains the CNN on MNIST, evaluates on the test set, plots accuracy/loss curves, and saves the model to `model.keras`.
 
-- Trained CNN model
-- Accuracy graph
-- Saved model file
+### CLI Prediction
 
-```text
-model.keras
-```
-
----
-
-# 🔍 Run Prediction
-
-Place a handwritten image:
-
-```text
-digit.png
-```
-
-inside project folder.
-
-Run:
+Place your handwritten digit image as `digit.png` in the project root, then:
 
 ```bash
 python predict.py
 ```
 
----
+```text
+Prediction Results
+──────────────────
+Predicted Digit : 7
+Confidence      : 0.9981
+```
 
-# 🌐 Run Streamlit Web App
+### Streamlit Web App
 
 ```bash
 streamlit run app.py
+# → http://localhost:8501
 ```
 
-Open browser:
-
-```text
-http://localhost:8501
-```
+Upload any handwritten digit image and get real-time prediction with confidence score.
 
 ---
 
-# 🖼️ Image Preprocessing Pipeline
-
-```text
-Input Image
-      ↓
-Grayscale Conversion
-      ↓
-Gaussian Blur
-      ↓
-Adaptive Thresholding
-      ↓
-Morphological Dilation
-      ↓
-Contour Detection
-      ↓
-Digit Cropping
-      ↓
-Resize to 28×28
-      ↓
-Normalization
-      ↓
-CNN Prediction
-```
-
----
-
-# 📈 Model Performance
+## Results
 
 | Metric | Score |
 |---|---|
@@ -246,116 +226,47 @@ CNN Prediction
 | Validation Accuracy | ~99% |
 | Test Accuracy | ~99% |
 
----
-
-# 🧮 Mathematical Concepts
-
-## Convolution Operation
-
-```math
-(I * K)(x,y)=\sum_m\sum_n I(m,n)K(x-m,y-n)
-```
+The CNN achieves near-human performance on MNIST due to the dataset's relatively constrained domain (single centered digits, uniform stroke style). Real-world generalization depends heavily on the preprocessing pipeline's ability to isolate and normalize the digit from varied inputs.
 
 ---
 
-## ReLU Activation
+## Future Improvements
 
-```math
-ReLU(x)=max(0,x)
-```
-
----
-
-## Softmax Function
-
-```math
-P(y_i)=\frac{e^{z_i}}{\sum_j e^{z_j}}
-```
+- [ ] Extend to full alphabet recognition (A–Z, a–z)
+- [ ] Multi-digit detection in a single image
+- [ ] Real-time webcam recognition
+- [ ] Transformer-based OCR (TrOCR)
+- [ ] Multi-language handwriting support
+- [ ] FastAPI backend + Docker containerization
 
 ---
 
-## Cross Entropy Loss
+## Tech Stack
 
-```math
-L=-\sum_i y_i\log(\hat{y_i})
-```
-
----
-
-# 📸 Screenshots
-
-## Training Accuracy Graph
-
-_Add your screenshot here_
+| Technology | Purpose |
+|---|---|
+| [Python 3.12](https://python.org) | Core application |
+| [TensorFlow / Keras](https://tensorflow.org) | CNN model training & inference |
+| [OpenCV](https://opencv.org) | Image preprocessing |
+| [NumPy](https://numpy.org) | Numerical operations |
+| [Matplotlib](https://matplotlib.org) | Training curve visualization |
+| [Streamlit](https://streamlit.io) | Web interface |
 
 ---
 
-## Prediction Output
+## Author
 
-_Add your screenshot here_
+**Mohit Singh Rajput** — AI / ML Engineer
 
----
-
-# 🔥 Future Improvements
-
-- 🔠 Alphabet Recognition
-- 📄 Full OCR System
-- 🎥 Real-time Webcam Recognition
-- 🌍 Multi-language Handwriting Support
-- 🤖 Transformer-based OCR
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/in/mohitsingh1307)
+[![GitHub](https://img.shields.io/badge/GitHub-121011?style=flat-square&logo=github&logoColor=white)](https://github.com/Mohit-1307)
+[![Kaggle](https://img.shields.io/badge/Kaggle-20BEFF?style=flat-square&logo=kaggle&logoColor=white)](https://www.kaggle.com/mohitsinghrajput1307)
+[![Email](https://img.shields.io/badge/Email-D14836?style=flat-square&logo=gmail&logoColor=white)](mailto:mohitsinghdausa@gmail.com)
 
 ---
 
-# 🧪 Example Prediction
+<div align="center">
 
-```text
-Prediction Results
--------------------
-Predicted Digit: 7
-Confidence: 0.9981
-```
+*If this project was useful, a ⭐ on the repository is appreciated.*
 
----
-
-# 📚 Learning Outcomes
-
-Through this project, concepts learned include:
-
-- Convolutional Neural Networks
-- Image Processing
-- Feature Extraction
-- Computer Vision
-- OCR Pipeline
-- Deep Learning Deployment
-- Streamlit Application Development
-
----
-
-# 🤝 Contributing
-
-Contributions are welcome!
-
-Feel free to:
-- Fork repository
-- Create feature branch
-- Submit pull requests
-
----
-
-# 📜 License
-
-This project is licensed under the MIT License.
-
----
-
-# 👨‍💻 Author
-
-### Mohit
-
-Machine Learning & AI Enthusiast 🚀
-
----
-
-# ⭐ If You Like This Project
-
-Give this repository a ⭐ on GitHub!
+</div>
