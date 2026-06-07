@@ -1,65 +1,40 @@
-import tensorflow as tf
-import numpy as np
+import os
 import cv2
 import matplotlib.pyplot as plt
-import os
+import numpy as np
+import tensorflow as tf
 
-# =========================
-# Load Trained CNN Model
-# =========================
+MODEL_NAME = "best_model.keras"
+IMAGE_PATH = "digit.png"
+IMAGE_SIZE = 28
 
-model = tf.keras.models.load_model("model.keras")
 
-# =========================
-# Image Path
-# =========================
+# Load trained model
+model = tf.keras.models.load_model(MODEL_NAME)
 
-image_path = "digit.png"
+print(f"Model loaded: {MODEL_NAME}")
 
-print("Looking for image at:")
-print(os.path.abspath(image_path))
+# Check image exists
+if not os.path.exists(IMAGE_PATH):
+    raise FileNotFoundError(f"Image not found: {os.path.abspath(IMAGE_PATH)}")
 
-# =========================
-# Check File Exists
-# =========================
+print(f"Reading image: {os.path.abspath(IMAGE_PATH)}")
 
-if not os.path.exists(image_path):
-    print("\nERROR: Image file not found!")
-    exit()
-
-# =========================
-# Load Image
-# =========================
-
-img = cv2.imread(
-    image_path,
+# Load image in grayscale
+image = cv2.imread(
+    IMAGE_PATH, 
     cv2.IMREAD_GRAYSCALE
-)
+    )
 
-# =========================
-# Verify Image Loaded
-# =========================
+if image is None:
+    raise ValueError("Failed to load image")
 
-if img is None:
-    print("\nERROR: Unable to load image!")
-    exit()
+# Reduce image noise
+blurred = cv2.GaussianBlur(image, (5, 5), 0)
 
-# =========================
-# Gaussian Blur
-# =========================
-
-img = cv2.GaussianBlur(
-    img,
-    (5, 5),
-    0
-)
-
-# =========================
-# Adaptive Threshold
-# =========================
-
-thresh = cv2.adaptiveThreshold(
-    img,
+# Convert image to binary
+threshold = cv2.adaptiveThreshold(
+    blurred,
     255,
     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
     cv2.THRESH_BINARY_INV,
@@ -67,133 +42,107 @@ thresh = cv2.adaptiveThreshold(
     2
 )
 
-# =========================
-# Morphological Dilation
-# =========================
-
+# Improve digit shape
 kernel = np.ones((3, 3), np.uint8)
 
-thresh = cv2.dilate(
-    thresh,
+threshold = cv2.dilate(
+    threshold,
     kernel,
-    iterations=1
+    iterations = 1
 )
 
-# =========================
-# Find Contours
-# =========================
-
+# Find digit contour
 contours, _ = cv2.findContours(
-    thresh,
+    threshold,
     cv2.RETR_EXTERNAL,
     cv2.CHAIN_APPROX_SIMPLE
 )
 
-# =========================
-# Ensure Digit Exists
-# =========================
+if not contours:
+    raise ValueError("No digit detected in image")
 
-if len(contours) == 0:
-    print("\nNo digit detected!")
-    exit()
-
-# =========================
-# Largest Contour
-# =========================
-
+# Select largest contour
 largest_contour = max(
     contours,
-    key=cv2.contourArea
+    key = cv2.contourArea
 )
 
-# =========================
-# Bounding Box
-# =========================
+x, y, width, height = cv2.boundingRect(largest_contour)
 
-x, y, w, h = cv2.boundingRect(
-    largest_contour
-)
+# Crop digit region
+digit = threshold[
+    y:y + height,
+    x:x + width
+]
 
-# =========================
-# Crop Digit
-# =========================
+# Resize while preserving aspect ratio
+height, width = digit.shape
 
-digit = thresh[y:y+h, x:x+w]
+scale = 20 / max(height, width)
 
-# =========================
-# Resize Digit
-# =========================
+new_width = int(width * scale)
+new_height = int(height * scale)
 
 digit = cv2.resize(
     digit,
-    (20, 20)
+    (new_width, new_height)
 )
 
-# =========================
-# Create 28x28 Canvas
-# =========================
-
+# Create black canvas
 canvas = np.zeros(
-    (28, 28),
-    dtype=np.uint8
+    (IMAGE_SIZE, IMAGE_SIZE),
+    dtype = np.uint8
 )
 
-# =========================
-# Center Digit
-# =========================
+# Center digit on canvas
+x_offset = (IMAGE_SIZE - new_width) // 2
+y_offset = (IMAGE_SIZE - new_height) // 2
 
-canvas[4:24, 4:24] = digit
+canvas[
+    y_offset:y_offset + new_height,
+    x_offset:x_offset + new_width
+] = digit
 
-# =========================
-# Normalize
-# =========================
+# Normalize image
+processed_image = (
+    canvas.astype("float32") / 255.0
+)
 
-canvas = canvas.astype("float32") / 255.0
-
-# =========================
-# Display Processed Digit
-# =========================
-
-plt.imshow(canvas, cmap="gray")
-
-plt.title("Processed Digit")
-
-plt.axis("off")
-
-plt.show()
-
-# =========================
-# Reshape for CNN
-# =========================
-
-canvas = canvas.reshape(
+# Prepare input for CNN
+model_input = processed_image.reshape(
     1,
-    28,
-    28,
+    IMAGE_SIZE,
+    IMAGE_SIZE,
     1
 )
 
-# =========================
-# Predict Digit
-# =========================
+# Predict digit
+prediction = model.predict(
+    model_input,
+    verbose = 0)
 
-prediction = model.predict(canvas)
+predicted_digit = int(np.argmax(prediction))
 
-predicted_digit = np.argmax(
-    prediction
-)
+confidence = float(np.max(prediction))
 
-confidence = np.max(
-    prediction
-)
+# Show processed digit
+plt.figure(figsize = (5, 5))
+plt.imshow(processed_image, cmap = "gray")
+plt.title(f"Prediction: {predicted_digit}")
+plt.axis("off")
+plt.show()
 
-# =========================
-# Output Results
-# =========================
+# Show prediction confidence
+plt.figure(figsize = (8, 4))
+plt.bar(range(10), prediction[0])
 
-print("\nPrediction Results")
-print("-------------------")
+plt.xlabel("Digit")
+plt.ylabel("Confidence")
+plt.title("Prediction Confidence")
+plt.xticks(range(10))
+plt.show()
 
-print(f"Predicted Digit: {predicted_digit}")
-
-print(f"Confidence: {confidence:.4f}")
+# Print results
+print("\nPrediction Result")
+print(f"Predicted Digit : {predicted_digit}")
+print(f"Confidence Score: {confidence:.4f}")
